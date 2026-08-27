@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Open Graph / Social Media Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="FURNI - Modern & Timeless Furniture">
+<meta property="og:description" content="Crafting timeless furniture pieces designed for modern living sanctuaries. Discover our handcrafted collection.">
+<meta property="og:image" content="http://localhost:3000/favicon.png">
+<meta property="og:url" content="http://localhost:3000">
+
+<!-- Twitter Card Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FURNI - Modern & Timeless Furniture">
+<meta name="twitter:description" content="Crafting timeless furniture pieces designed for modern living sanctuaries.">
+<meta name="twitter:image" content="http://localhost:3000/favicon.png">
+<title>Shop - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+</head>
+<body>
+<header class="navbar">
+<div class="logo"><a href="k.html">FURNI</a></div>
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="Collection.html">Collections</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+</nav>
+</header>
+
+<section class="shop-section" style="padding:100px 60px; text-align:center;">
+<h1>All Products</h1>
+<div class="back-btn" onclick="window.location.href='k.html'">←</div>
+<div class="filter-bar">
+<input type="text" id="searchInput" placeholder="Search products…">
+<select id="categorySelect">
+<option value="">All categories</option>
+<option value="sofa">Sofa</option>
+<option value="chair">Chair</option>
+<option value="table">Table</option>
+<option value="bed">Bed</option>
+<option value="decor">Decor</option>
+</select>
+<select id="collectionSelect">
+<option value="">All collections</option>
+<option value="scandinavian">Scandinavian</option>
+<option value="vintage">Vintage</option>
+<option value="industrial">Industrial</option>
+</select>
+<select id="sortSelect">
+<option value="">Sort: Featured</option>
+<option value="price_asc">Price: Low to High</option>
+<option value="price_desc">Price: High to Low</option>
+<option value="name_asc">Name: A–Z</option>
+<option value="newest">Newest</option>
+</select>
+</div>
+<div class="product-grid" id="shopGrid"></div>
+</section>
+
+<div id="quickViewModal" onclick="if(event.target===this) closeQuickView()">
+  <div class="qv-box">
+    <button class="qv-close" onclick="closeQuickView()">×</button>
+    <img id="qvImg" src="">
+    <div>
+      <h2 id="qvName"></h2>
+      <p id="qvPrice" style="font-size:20px; margin:10px 0;"></p>
+      <p id="qvDesc" style="color:#666; margin-bottom:20px;"></p>
+      <p id="qvStock" style="color:#999; font-size:13px;"></p>
+      <br>
+      <button class="btn-primary" id="qvAddBtn">Add to Cart</button>
+      <a id="qvLink" href="#" style="margin-left:10px; font-size:13px; color:#666;">View Full Page →</a>
+    </div>
+  </div>
+</div>
+
+<div id="cartDrawer">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+const searchInput = document.getElementById("searchInput");
+const categorySelect = document.getElementById("categorySelect");
+const collectionSelect = document.getElementById("collectionSelect");
+const sortSelect = document.getElementById("sortSelect");
+function escapeHtml(str){ return String(str ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
+function starRating(p){
+  if(!p.ratingCount) return '<div style="height:20px"></div>';
+  const rounded=Math.round(p.ratingAvg);
+  const stars='★'.repeat(rounded)+'☆'.repeat(5-rounded);
+  return `<div class="star-rating">${stars}<span class="rating-count">(${p.ratingCount})</span></div>`;
+}
+let debounceTimer;
+function debounceLoad(){ clearTimeout(debounceTimer); debounceTimer=setTimeout(loadProducts,250); }
+function loadProducts(){
+  const grid=document.getElementById("shopGrid");
+  grid.innerHTML = Array(6).fill(0).map(()=>`<div class="product-card"><div class="skeleton skeleton-card"></div></div>`).join('');
+  const params=new URLSearchParams();
+  if(searchInput.value.trim()) params.set("search",searchInput.value.trim());
+  if(categorySelect.value) params.set("category",categorySelect.value);
+  if(collectionSelect.value) params.set("collection",collectionSelect.value);
+  if(sortSelect.value) params.set("sort",sortSelect.value);
+  const newUrl=params.toString()?`shop.html?${params.toString()}`:'shop.html';
+  history.replaceState(null,'',newUrl);
+  fetch(`/api/products?${params.toString()}`)
+    .then(res=>res.json())
+    .then(products=>{
+      if(products.length===0){
+        grid.innerHTML='<p class="filter-empty">No products match your search.</p>';
+        return;
+      }
+      grid.innerHTML=products.map(p=>`
+        <div class="product-card">
+          <button class="wishlist-heart ${isWishlisted(p.id)?'active':''}" aria-pressed="${isWishlisted(p.id)}" onclick="event.stopPropagation(); toggleWishlistButton(this, ${p.id})">${isWishlisted(p.id)?'♥':'♡'}</button>
+          <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" onclick="openQuickView(${p.id})">
+          ${p.stock > 0 && p.stock <= 3 ? `<span class="low-stock">Only ${p.stock} left!</span>` : ''}
+          <h3>${escapeHtml(p.name)}</h3>
+          ${starRating(p)}
+          <p>$${p.price.toFixed(2)}</p>
+          <button class="cart-btn" ${p.stock===0?'disabled':''} onclick="addToCart(${p.id}); this.textContent='Added ✓'">${p.stock===0?'Sold out':'Add to Cart'}</button>
+        </div>
+      `).join('');
+    })
+    .catch(()=>{ grid.innerHTML='<p class="load-error">Could not load products — is the server running?</p>'; });
+}
+searchInput.addEventListener("input",debounceLoad);
+categorySelect.addEventListener("change",loadProducts);
+collectionSelect.addEventListener("change",loadProducts);
+sortSelect.addEventListener("change",loadProducts);
+function openProduct(id){ window.location.href="product.html?id="+id; }
+function openQuickView(id){
+  fetch(`/api/products/${id}`)
+    .then(r=>r.json())
+    .then(p=>{
+      document.getElementById("qvImg").src = p.img;
+      document.getElementById("qvName").innerText = p.name;
+      document.getElementById("qvPrice").innerText = "$" + p.price.toFixed(2);
+      document.getElementById("qvDesc").innerText = p.description;
+      document.getElementById("qvStock").innerText = p.stock > 0 ? p.stock + " in stock" : "Out of stock";
+      document.getElementById("qvLink").href = "product.html?id=" + p.id;
+      document.getElementById("qvAddBtn").onclick = function(){
+        addToCart(p.id);
+        this.textContent = "Added ✓";
+        setTimeout(()=>{ this.textContent="Add to Cart"; }, 1500);
+      };
+      document.getElementById("quickViewModal").classList.add("open");
+    });
+}
+function closeQuickView(){ document.getElementById("quickViewModal").classList.remove("open"); }
+(function initFromUrl(){
+  const urlParams=new URLSearchParams(window.location.search);
+  if(urlParams.get("search")) searchInput.value=urlParams.get("search");
+  if(urlParams.get("category")) categorySelect.value=urlParams.get("category");
+  if(urlParams.get("collection")) collectionSelect.value=urlParams.get("collection");
+  if(urlParams.get("sort")) sortSelect.value=urlParams.get("sort");
+})();
+loadProducts();
+</script>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-col">
+      <h4>FURNI</h4>
+      <p style="color:#aaa; max-width:260px;">Crafting timeless furniture pieces designed for modern living sanctuaries.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="k.html">Home</a></li>
+        <li><a href="shop.html">Shop All</a></li>
+        <li><a href="collection.html">Collections</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="refunds.html">Shipping & Refunds</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 FURNI. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>

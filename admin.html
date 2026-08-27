@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+<style>
+.admin-page { padding: 120px 40px; max-width: 1200px; margin: 0 auto; }
+.admin-box { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+th { background: #f5f1ea; }
+.key-input { padding: 12px; border-radius: 10px; border: 1px solid #ccc; width: 300px; }
+.admin-input { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; }
+.prod-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+.edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2000; justify-content: center; align-items: center; }
+.edit-modal.open { display: flex; }
+.edit-form { background: #f5f1ea; padding: 30px; border-radius: 15px; width: 500px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+<header class="navbar">
+<div class="logo"><a href="k.html">FURNI</a></div>
+<nav><a href="k.html">Home</a><a href="shop.html">Shop</a></nav>
+</header>
+
+<section class="admin-page">
+<h1>Admin Dashboard</h1>
+<div style="margin:20px 0">
+<input id="adminKey" class="key-input" placeholder="Admin Key">
+<button class="btn-primary" onclick="loadData()">Load Data</button>
+</div>
+
+<div class="admin-box">
+<h3>Collections Manager</h3>
+<div id="collections">Enter key and click Load</div>
+
+<div style="display:flex; gap:10px; margin-top:15px; align-items:flex-end;">
+  <label style="flex:1;">New collection name
+    <input id="newCollectionName" class="admin-input" placeholder="e.g. Coastal Breeze">
+  </label>
+  <label style="flex:1;">Slug (auto-filled, editable)
+    <input id="newCollectionSlug" class="admin-input" placeholder="coastal-breeze">
+  </label>
+  <button class="btn-primary" style="padding:10px 18px;" onclick="createCollection()">Add Collection</button>
+</div>
+</div>
+
+<div class="admin-box">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h3>Products Manager - Edit Name, Image, Price, Stock</h3>
+  <button class="btn-primary" onclick="openAdd()">+ Add New Product</button>
+</div>
+<div id="products">Enter key and click Load</div>
+</div>
+
+<div class="admin-box">
+<h3>Orders (<span id="orderCount">0</span>)</h3>
+<div id="orders">-</div>
+</div>
+
+<div class="admin-box">
+<h3>Messages (<span id="msgCount">0</span>)</h3>
+<div id="messages">-</div>
+</div>
+</section>
+
+<!-- EDIT MODAL -->
+<div id="editModal" class="edit-modal" onclick="if(event.target===this) closeEdit()">
+<div class="edit-form" onclick="event.stopPropagation()">
+<h3 id="modalTitle">Edit Product</h3>
+<input id="e_id" type="hidden">
+<label>Name <input id="e_name" class="admin-input"></label>
+<label>Price <input id="e_price" type="number" step="0.01" class="admin-input"></label>
+<label>Stock <input id="e_stock" type="number" class="admin-input"></label>
+<label>Category 
+  <select id="e_category" class="admin-input">
+    <option value="sofa">sofa</option><option value="chair">chair</option><option value="table">table</option><option value="bed">bed</option><option value="decor">decor</option>
+  </select>
+</label>
+<label>Collection 
+  <select id="e_collection" class="admin-input"></select>
+</label>
+<label>Image URL <input id="e_img" class="admin-input" placeholder="https://... or /images/..."></label>
+<img id="e_preview" src="" style="width:100%; height:200px; object-fit:cover; border-radius:10px; display:none;">
+<label>Description <textarea id="e_desc" class="admin-input" rows="4"></textarea></label>
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button class="btn-primary" onclick="saveProduct()" style="flex:1;">Save Changes</button>
+<button onclick="closeEdit()" style="flex:1; padding:12px; border-radius:25px; border:1px solid #ccc; cursor:pointer;">Cancel</button>
+</div>
+</div>
+</div>
+
+<script>
+function escapeHtml(s){ return String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
+let allProducts = [];
+let allCollections = [];
+
+async function loadData(){
+  const key=document.getElementById("adminKey").value.trim();
+  if(!key){ alert("Enter key"); return; }
+  const headers={"x-admin-key":key};
+
+  // COLLECTIONS
+  try{
+    const res=await fetch("/api/collections",{headers});
+    if(!res.ok) throw new Error(await res.text());
+    allCollections=await res.json();
+    renderCollections();
+    populateCollectionSelect();
+  }catch(e){ document.getElementById("collections").innerHTML=`<p style="color:red">${escapeHtml(e.message)}</p>`; }
+
+  // PRODUCTS
+  try{
+    const res=await fetch("/api/products",{headers});
+    allProducts=await res.json();
+    document.getElementById("products").innerHTML=`
+      <table><thead><tr><th>Img</th><th>Name</th><th>Price</th><th>Stock</th><th>Category</th><th>Collection</th><th>Action</th></tr></thead>
+      <tbody>${allProducts.map(p=>`
+        <tr>
+          <td><img class="prod-thumb" src="${escapeHtml(p.img)}"></td>
+          <td>${escapeHtml(p.name)}</td>
+          <td>$${p.price}</td>
+          <td>${p.stock} ${p.stock<=3&&p.stock>0?`<span style="color:#ff6b35;font-weight:bold;">LOW</span>`:''}</td>
+          <td>${escapeHtml(p.category||'')}</td>
+          <td>${escapeHtml(collectionName(p.collection))}</td>
+          <td><button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="openEdit(${p.id})">Edit</button></td>
+        </tr>`).join('')}</tbody></table>`;
+  }catch(e){ document.getElementById("products").innerHTML=`<p style="color:red">${escapeHtml(e.message)}</p>`; }
+
+  // ORDERS
+  try{
+    const res=await fetch("/api/orders",{headers});
+    const orders=await res.json();
+    document.getElementById("orderCount").textContent=orders.length;
+    document.getElementById("orders").innerHTML=orders.length?`
+      <table>
+        <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Total</th></tr></thead>
+        <tbody>${orders.map(o=>`
+          <tr>
+            <td>#${o.id}</td>
+            <td>${escapeHtml(o.customer_name)}</td>
+            <td>${escapeHtml(o.customer_email)}</td>
+            <td>$${(o.total_cents/100).toFixed(2)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`:'<p>No orders</p>';
+  }catch(e){ document.getElementById("orders").innerHTML=`<p style="color:red">${escapeHtml(e.message)}</p>`; }
+
+  // MESSAGES
+  try{
+    const res=await fetch("/api/messages",{headers});
+    const messages=await res.json();
+    document.getElementById("msgCount").textContent=messages.length;
+    document.getElementById("messages").innerHTML=messages.length?`
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+        <tbody>${messages.map(m=>`
+          <tr>
+            <td>${escapeHtml(m.name)}</td>
+            <td>${escapeHtml(m.email)}</td>
+            <td>${escapeHtml(m.message)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`:'<p>No messages</p>';
+  }catch(e){ document.getElementById("messages").innerHTML=`<p style="color:red">${escapeHtml(e.message)}</p>`; }
+}
+/* ---------------- Collections ---------------- */
+
+function collectionName(slug){
+  const c = allCollections.find(x=>x.slug===slug);
+  return c ? c.name : slug;
+}
+
+function renderCollections(){
+  document.getElementById("collections").innerHTML = `
+    <table>
+      <thead><tr><th>Slug</th><th>Name</th><th>Products</th><th>Hero Image URL</th><th>Action</th></tr></thead>
+      <tbody>${allCollections.map(c => `
+        <tr>
+          <td><code>${escapeHtml(c.slug)}</code></td>
+          <td><input class="admin-input" id="cname_${escapeHtml(c.slug)}" value="${escapeHtml(c.name)}"></td>
+          <td>${c.productCount}</td>
+          <td><input class="admin-input" id="chero_${escapeHtml(c.slug)}" value="${escapeHtml(c.heroImg || '')}" placeholder="https://..."></td>
+          <td><button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="renameCollection('${escapeHtml(c.slug)}')">Save</button></td>
+        </tr>
+      `).join('')}</tbody>
+    </table>
+  `;
+}
+
+// Auto-suggests a slug as the admin types a name, while still letting
+// them override it before creating (renaming later never changes the
+// slug — see the server-side comment on PUT /api/collections/:slug).
+document.getElementById("newCollectionName").addEventListener("input", (e) => {
+  const slugField = document.getElementById("newCollectionSlug");
+  slugField.value = e.target.value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+});
+
+async function createCollection(){
+  const key=document.getElementById("adminKey").value.trim();
+  if(!key){ alert("Enter key"); return; }
+  const name=document.getElementById("newCollectionName").value.trim();
+  const slug=document.getElementById("newCollectionSlug").value.trim();
+  if(!name){ alert("Enter a collection name."); return; }
+
+  try{
+    const res=await fetch("/api/collections",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-admin-key":key},
+      body:JSON.stringify({ name, slug })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error || "Could not create collection.");
+    document.getElementById("newCollectionName").value="";
+    document.getElementById("newCollectionSlug").value="";
+    loadData();
+  }catch(e){ alert("Error: "+e.message); }
+}
+
+async function renameCollection(slug){
+  const key=document.getElementById("adminKey").value.trim();
+  if(!key){ alert("Enter key"); return; }
+  const name=document.getElementById(`cname_${slug}`).value.trim();
+  const heroImg=document.getElementById(`chero_${slug}`).value.trim();
+
+  try{
+    const res=await fetch(`/api/collections/${slug}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","x-admin-key":key},
+      body:JSON.stringify({ name, heroImg })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error || "Could not update collection.");
+    loadData();
+  }catch(e){ alert("Error: "+e.message); }
+}
+
+function populateCollectionSelect(){
+  const select=document.getElementById("e_collection");
+  select.innerHTML = allCollections.map(c => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.name)}</option>`).join('');
+}
+
+/* ---------------- Products: add / edit (shared modal) ---------------- */
+
+function updateImagePreview(){
+  const url = document.getElementById("e_img").value.trim();
+  const preview = document.getElementById("e_preview");
+  if(!url){
+    preview.style.display='none';
+    preview.removeAttribute('src');
+    return;
+  }
+  preview.onerror = () => { preview.style.display='none'; };
+  preview.onload = () => { preview.style.display='block'; };
+  preview.src = url;
+}
+
+function openEdit(id){
+  const p=allProducts.find(x=>x.id===id);
+  if(!p) return;
+  if(allCollections.length===0){
+    alert("Collections haven't loaded yet — click Load Data again first.");
+    return;
+  }
+  document.getElementById("modalTitle").textContent="Edit Product";
+  document.getElementById("e_id").value=p.id;
+  document.getElementById("e_name").value=p.name;
+  document.getElementById("e_price").value=p.price;
+  document.getElementById("e_stock").value=p.stock;
+  document.getElementById("e_category").value=p.category||'sofa';
+  populateCollectionSelect();
+  // If this product's stored collection no longer matches any known
+  // slug (e.g. old data from before collections existed), fall back to
+  // the first available collection rather than silently submitting "".
+  const collectionSelect=document.getElementById("e_collection");
+  collectionSelect.value=p.collection;
+  if(collectionSelect.value !== p.collection){
+    collectionSelect.value=allCollections[0].slug;
+  }
+  document.getElementById("e_img").value=p.img;
+  document.getElementById("e_desc").value=p.description||'';
+  document.getElementById("editModal").classList.add("open");
+  updateImagePreview();
+  document.getElementById("e_img").oninput = updateImagePreview;
+}
+
+function openAdd(){
+  if(allCollections.length===0){
+    alert("Load data first (so at least one collection exists to assign the new product to).");
+    return;
+  }
+  document.getElementById("modalTitle").textContent="Add New Product";
+  document.getElementById("e_id").value="";
+  document.getElementById("e_name").value="";
+  document.getElementById("e_price").value="";
+  document.getElementById("e_stock").value="0";
+  document.getElementById("e_category").value="sofa";
+  populateCollectionSelect();
+  document.getElementById("e_collection").value=allCollections[0].slug;
+  document.getElementById("e_img").value="";
+  document.getElementById("e_desc").value="";
+  document.getElementById("editModal").classList.add("open");
+  updateImagePreview();
+  document.getElementById("e_img").oninput = updateImagePreview;
+}
+
+function closeEdit(){ document.getElementById("editModal").classList.remove("open"); }
+
+async function saveProduct(){
+  const key=document.getElementById("adminKey").value.trim();
+  const id=document.getElementById("e_id").value;
+  const isCreating = !id;
+  const collection=document.getElementById("e_collection").value;
+  if(!collection){
+    alert("No collection is selected — click Load Data again so the dropdown populates, then reopen this product.");
+    return;
+  }
+  const data={
+    name: document.getElementById("e_name").value,
+    price: parseFloat(document.getElementById("e_price").value),
+    stock: parseInt(document.getElementById("e_stock").value),
+    category: document.getElementById("e_category").value,
+    collection: collection,
+    img: document.getElementById("e_img").value,
+    description: document.getElementById("e_desc").value
+  };
+  try{
+    const res=await fetch(isCreating ? "/api/products" : `/api/products/${id}`,{
+      method: isCreating ? "POST" : "PUT",
+      headers:{"Content-Type":"application/json","x-admin-key":key},
+      body:JSON.stringify(data)
+    });
+    const result=await res.json();
+    if(!res.ok) throw new Error(result.error || "Save failed.");
+    alert(isCreating ? "Product created! Refresh shop page to see it." : "Updated! Refresh shop page to see changes");
+    closeEdit();
+    loadData();
+  }catch(e){ alert("Error: "+e.message); }
+}
+</script>
+</body>
+</html>

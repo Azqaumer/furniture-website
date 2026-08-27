@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FURNI - Contact</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+</head>
+
+<body>
+
+<header class="navbar">
+<div class="logo">
+<a href="k.html">FURNI</a>
+</div>
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="collection.html">Collections</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+<a href="shop.html" class="btn-primary">Shop Now</a>
+</nav>
+</header>
+
+<section class="contact-hero">
+<div class="contact-hero-content">
+<h1>GET IN TOUCH</h1>
+<p>We're here to help you design your perfect space.</p>
+</div>
+</section>
+
+<section class="contact-section">
+
+<div class="contact-info">
+<h2>Contact Us</h2>
+<p>Email: support@furni.com</p>
+<p>Phone: +123 456 7890</p>
+<p>Address: 123 Modern Street, Interior City</p>
+</div>
+
+<form class="contact-form" id="contactForm">
+<input type="text" id="contactName" placeholder="Your Name" required>
+<input type="email" id="contactEmail" placeholder="Your Email" required>
+<textarea rows="5" id="contactMessage" placeholder="Your Message" required></textarea>
+<button type="submit" class="btn-primary">Send Message</button>
+</form>
+
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+
+<script>
+document.getElementById("contactForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById("contactName").value,
+        email: document.getElementById("contactEmail").value,
+        message: document.getElementById("contactMessage").value
+      })
+    });
+    if(!res.ok) throw new Error();
+    e.target.innerHTML = `<p style="text-align:center; padding:20px 0;">Thanks! We'll get back to you soon.</p>`;
+  } catch {
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+    alert('Failed to send. Is server running?');
+  }
+});
+</script>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-col">
+      <h4>FURNI</h4>
+      <p style="color:#aaa; max-width:260px;">Crafting timeless furniture pieces designed for modern living sanctuaries.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="k.html">Home</a></li>
+        <li><a href="shop.html">Shop All</a></li>
+        <li><a href="collection.html">Collections</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="refunds.html">Shipping & Refunds</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 FURNI. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>

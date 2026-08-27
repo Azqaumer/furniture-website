@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+
+<style>
+.cart-page {
+    padding: 120px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.cart-line {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+}
+
+.cart-line img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.cart-line .info {
+    flex: 1;
+}
+
+.cart-line .info h3 {
+    margin: 0 0 5px;
+}
+
+.cart-line .info p {
+    margin: 0;
+    color: #666;
+}
+
+.cart-line input[type="number"] {
+    width: 60px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.cart-line .remove {
+    cursor: pointer;
+    color: #c0392b;
+    background: none;
+    border: none;
+    font-size: 14px;
+}
+
+.cart-line .remove:hover {
+    text-decoration: underline;
+}
+
+.cart-price {
+    min-width: 90px;
+    text-align: right;
+    font-weight: bold;
+}
+
+.cart-total {
+    text-align: right;
+    margin: 30px 0;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.cart-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+}
+
+.clear-cart {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.clear-cart:hover {
+    text-decoration: underline;
+}
+
+.empty-cart {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-cart h2 {
+    margin-bottom: 15px;
+}
+
+@media (max-width: 700px) {
+    .cart-page {
+        padding: 100px 20px;
+    }
+
+    .cart-line {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .cart-line .info {
+        min-width: 150px;
+    }
+
+    .cart-price {
+        margin-left: auto;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">
+        <a href="k.html">FURNI</a>
+    </div>
+
+    <nav>
+        <a href="k.html">Home</a>
+        <a href="shop.html">Shop</a>
+        <a href="collection.html">Collections</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+</header>
+
+<section class="cart-page">
+
+    <h1>Your Cart</h1>
+
+    <div id="cartLines" style="margin-top:30px;"></div>
+
+    <div class="cart-total" id="cartTotal"></div>
+
+    <div class="cart-actions" id="cartActions" style="display:none;">
+
+        <button
+            type="button"
+            class="clear-cart"
+            onclick="clearCartAndRender()">
+            Clear Cart
+        </button>
+
+        <a href="checkout.html" class="btn-primary" id="checkoutLink">
+            Checkout
+        </a>
+
+    </div>
+
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+
+function render() {
+
+    const cart = getCart();
+
+    const linesEl = document.getElementById("cartLines");
+    const totalEl = document.getElementById("cartTotal");
+    const actionsEl = document.getElementById("cartActions");
+
+    /*
+     * Empty cart
+     */
+    if (cart.length === 0) {
+
+        linesEl.innerHTML = `
+            <div class="empty-cart">
+                <h2>Your cart is empty</h2>
+                <p>Looks like you haven't added anything yet.</p>
+                <br>
+                <a href="shop.html" class="btn-primary">
+                    Go Shopping →
+                </a>
+            </div>
+        `;
+
+        totalEl.textContent = "";
+        actionsEl.style.display = "none";
+
+        return;
+    }
+
+    actionsEl.style.display = "flex";
+
+    linesEl.innerHTML = "<p>Loading your cart...</p>";
+
+    /*
+     * Get the latest products from the server.
+     */
+    fetch("/api/products")
+
+        .then(res => {
+
+            if (!res.ok) {
+                throw new Error("Could not load products");
+            }
+
+            return res.json();
+        })
+
+        .then(products => {
+
+            let total = 0;
+
+            const validCart = [];
+
+            const html = cart.map(line => {
+
+                const product = products.find(
+                    p => Number(p.id) === Number(line.productId)
+                );
+
+                /*
+                 * Product no longer exists.
+                 */
+                if (!product) {
+                    return "";
+                }
+
+                /*
+                 * Product is sold out.
+                 */
+                if (product.stock <= 0) {
+
+                    return `
+                        <div class="cart-line">
+
+                            <img
+                                src="${product.img}"
+                                alt="${product.name}"
+                            >
+
+                            <div class="info">
+
+                                <h3>${product.name}</h3>
+
+                                <p style="color:#c0392b;">
+                                    Currently out of stock
+                                </p>
+
+                            </div>
+
+                            <button
+                                class="remove"
+                                onclick="removeFromCart(${product.id}); render();">
+
+                                Remove
+
+                            </button>
+
+                        </div>
+                    `;
+                }
+
+                /*
+                 * Make sure quantity never exceeds stock.
+                 */
+                const safeQty = Math.min(
+                    Math.max(1, Number(line.qty)),
+                    Number(product.stock)
+                );
+
+                validCart.push({
+                    productId: Number(product.id),
+                    qty: safeQty
+                });
+
+                const subtotal = product.price * safeQty;
+
+                total += subtotal;
+
+                return `
+                    <div class="cart-line">
+
+                        <img
+                            src="${product.img}"
+                            alt="${product.name}"
+                        >
+
+                        <div class="info">
+
+                            <h3>${product.name}</h3>
+
+                            <p>
+                                $${product.price.toFixed(2)} each
+                            </p>
+
+                        </div>
+
+                        <input
+                            type="number"
+                            min="1"
+                            max="${product.stock}"
+                            value="${safeQty}"
+                            onchange="
+                                updateQty(
+                                    ${product.id},
+                                    Number(this.value)
+                                );
+                                render();
+                            "
+                        >
+
+                        <div class="cart-price">
+                            $${subtotal.toFixed(2)}
+                        </div>
+
+                        <button
+                            class="remove"
+                            onclick="
+                                removeFromCart(${product.id});
+                                render();
+                            "
+                        >
+                            Remove
+                        </button>
+
+                    </div>
+                `;
+            }).join("");
+
+            linesEl.innerHTML = html;
+
+            /*
+             * Save corrected quantities.
+             */
+            saveCart(validCart);
+
+            totalEl.textContent =
+                `Total: $${total.toFixed(2)}`;
+
+        })
+
+        .catch(error => {
+
+            console.error(error);
+
+            linesEl.innerHTML = `
+                <p class="load-error">
+                    Could not load your cart.
+                    Is the FURNI server running?
+                </p>
+            `;
+
+            totalEl.textContent = "";
+
+            actionsEl.style.display = "none";
+        });
+}
+
+
+/*
+ * Clear cart and refresh the page.
+ */
+function clearCartAndRender() {
+
+    if (confirm("Are you sure you want to clear your cart?")) {
+
+        clearCart();
+
+        render();
+    }
+}
+
+
+/*
+ * Render cart when page opens.
+ */
+render();
+
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

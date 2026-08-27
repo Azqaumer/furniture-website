@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Explore Collection - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+
+<style>
+.explore-hero {
+height: 70vh;
+margin-top: -80px;
+background:
+linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6') center/cover no-repeat;
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+}
+.explore-hero h1 {
+color: white;
+font-size: 60px;
+letter-spacing: 2px;
+text-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+.explore-products {
+padding: 100px 60px;
+text-align: center;
+}
+.product-grid {
+display: flex;
+gap: 40px;
+justify-content: center;
+flex-wrap: wrap;
+margin-top: 60px;
+}
+.product-card {
+width: 240px;
+background: rgba(255,255,255,0.7);
+backdrop-filter: blur(10px);
+border-radius: 20px;
+padding: 15px;
+transition: 0.4s;
+box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+position: relative;
+}
+.product-card:nth-child(odd) { transform: rotate(-1.5deg); }
+.product-card:nth-child(even) { transform: rotate(1.5deg); }
+.product-card img {
+width: 100%;
+height: 260px;
+object-fit: cover;
+border-radius: 15px;
+transition: 0.4s;
+}
+.product-card h3 { margin-top: 10px; font-size: 16px; }
+.product-card p { color: #666; margin-top: 5px; }
+.product-card:hover {
+transform: rotate(0deg) translateY(-10px) scale(1.05);
+box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+}
+.product-card:hover img { transform: scale(1.05); }
+.product-card button {
+margin-top: 10px;
+padding: 8px 15px;
+border: none;
+background: black;
+color: white;
+border-radius: 20px;
+cursor: pointer;
+transition: 0.3s;
+}
+.product-card button:hover { transform: translateY(-2px); }
+</style>
+
+</head>
+
+<body>
+
+<header class="navbar">
+<div class="logo">
+<a href="k.html">FURNI</a>
+</div>
+
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="collection.html">Collections</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+</nav>
+</header>
+
+<section class="explore-hero">
+<h1>EXPLORE COLLECTION</h1>
+</section>
+
+<section class="explore-products">
+<div class="product-grid" id="exploreGrid">Loading…</div>
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+function openProduct(id){ window.location.href = "product.html?id=" + id; }
+
+function starRating(p) {
+  if (!p.ratingCount) return '';
+  const rounded = Math.round(p.ratingAvg);
+  const stars = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+  return `<div class="star-rating">${stars}<span class="rating-count">(${p.ratingCount})</span></div>`;
+}
+
+fetch('/api/products')
+  .then(res => res.json())
+  .then(products => {
+    const grid = document.getElementById("exploreGrid");
+    grid.innerHTML = products.slice(0, 4).map(p => `
+      <div class="product-card">
+        <button class="wishlist-heart ${isWishlisted(p.id) ? 'active' : ''}"
+          aria-pressed="${isWishlisted(p.id)}"
+          onclick="event.stopPropagation(); toggleWishlistButton(this, ${p.id})">${isWishlisted(p.id) ? '♥' : '♡'}</button>
+        <img src="${p.img}" onclick="openProduct(${p.id})">
+        <h3>${p.name}</h3>
+        ${starRating(p)}
+        <p>$${p.price.toFixed(2)}</p>
+        <button ${p.stock === 0 ? 'disabled' : ''}
+          onclick="addToCart(${p.id}); this.textContent='Added ✓'">
+          ${p.stock === 0 ? 'Sold out' : 'Add to Cart'}
+        </button>
+      </div>
+    `).join('');
+  })
+  .catch(() => {
+    document.getElementById("exploreGrid").innerHTML =
+      '<p class="load-error">Could not load products — is the server running?</p>';
+  });
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

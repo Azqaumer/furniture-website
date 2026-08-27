@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<!-- Open Graph / Social Media Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="FURNI - Modern & Timeless Furniture">
+<meta property="og:description" content="Crafting timeless furniture pieces designed for modern living sanctuaries. Discover our handcrafted collection.">
+<meta property="og:image" content="http://localhost:3000/favicon.png">
+<meta property="og:url" content="http://localhost:3000">
+
+<!-- Twitter Card Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FURNI - Modern & Timeless Furniture">
+<meta name="twitter:description" content="Crafting timeless furniture pieces designed for modern living sanctuaries.">
+<meta name="twitter:image" content="http://localhost:3000/favicon.png">
+<title>FURNI - Home</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+</head>
+
+<body>
+
+<header class="navbar">
+<div class="logo">
+<a href="k.html">FURNI</a>
+</div>
+
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="collection.html">Collections</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+<a href="shop.html" class="btn-primary">Shop Now</a>
+</nav>
+</header>
+
+<section class="hero">
+<div class="hero-content">
+<h1>DESIGN YOUR<br>PERFECT SPACE</h1>
+<p>Timeless furniture crafted for modern living.</p>
+<a href="collection.html" class="btn-primary">Explore Collection</a>
+</div>
+</section>
+
+<section class="featured">
+<div class="featured-left" id="featuredGrid">Loading...</div>
+<div class="featured-right">
+<h2>FEATURED COLLECTION</h2>
+<p>Handcrafted pieces designed to elevate your home with timeless elegance.</p>
+<a href="collection.html" class="btn-dark">View All</a>
+</div>
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+function openProduct(id){ window.location.href = "product.html?id=" + id; }
+
+function starRating(p) {
+  if (!p.ratingCount) return '';
+  const rounded = Math.round(p.ratingAvg);
+  const stars = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+  return `<div class="star-rating">${stars}<span class="rating-count">(${p.ratingCount})</span></div>`;
+}
+
+fetch('/api/products')
+  .then(res => res.json())
+  .then(products => {
+    document.getElementById("featuredGrid").innerHTML = products.slice(0,3).map(p => `
+      <div class="product-card">
+        <button class="wishlist-heart ${isWishlisted(p.id) ? 'active' : ''}"
+          aria-pressed="${isWishlisted(p.id)}"
+          onclick="event.stopPropagation(); toggleWishlistButton(this, ${p.id})">${isWishlisted(p.id) ? '♥' : '♡'}</button>
+        <div onclick="openProduct(${p.id})">
+          <img src="${p.img}" alt="${p.name}"/>
+          <h3>${p.name}</h3>
+          ${starRating(p)}
+          <p>$${p.price.toFixed(2)}</p>
+        </div>
+      </div>
+    `).join('');
+  })
+  .catch(() => {
+    document.getElementById("featuredGrid").innerHTML =
+      '<p class="load-error">Could not load featured products — is the server running?</p>';
+  });
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+<div id="quickViewModal" onclick="if(event.target===this) closeQuickView()">
+  <div class="qv-box">
+    <button class="qv-close" onclick="closeQuickView()">×</button>
+    <img id="qvImg" src="">
+    <div>
+      <h2 id="qvName"></h2>
+      <p id="qvPrice" style="font-size:20px; margin:10px 0;"></p>
+      <p id="qvDesc" style="color:#666; margin-bottom:20px;"></p>
+      <p id="qvStock" style="color:#999; font-size:13px;"></p>
+      <br>
+      <button class="btn-primary" id="qvAddBtn">Add to Cart</button>
+      <a id="qvLink" href="#" style="margin-left:10px; font-size:13px; color:#666;">View Full Page →</a>
+    </div>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-col">
+      <h4>FURNI</h4>
+      <p style="color:#aaa; max-width:260px;">Crafting timeless furniture pieces designed for modern living sanctuaries.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="k.html">Home</a></li>
+        <li><a href="shop.html">Shop All</a></li>
+        <li><a href="collection.html">Collections</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="refunds.html">Shipping & Refunds</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 FURNI. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checkout - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+
+<style>
+  .checkout-page { padding: 120px 60px; max-width: 600px; margin: 0 auto; }
+  .checkout-page form { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+  .checkout-page input,
+  .checkout-page select {
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    font-family: inherit;
+    width: 100%;
+  }
+  .checkout-error {
+    background: #fdecea;
+    color: #c0392b;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-top: 15px;
+    display: none;
+  }
+  .checkout-success { text-align: center; }
+
+  .checkout-section {
+    margin-top: 35px;
+  }
+
+  .checkout-section h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .field-row > * {
+    flex: 1;
+  }
+
+  /* --- Order summary --- */
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 14px;
+  }
+
+  .summary-line img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .summary-line .summary-name {
+    flex: 1;
+  }
+
+  .summary-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 15px;
+  }
+
+  /* --- Payment method toggle --- */
+  .payment-methods {
+    display: flex;
+    gap: 12px;
+  }
+
+  .payment-method-option {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    border: 2px solid transparent;
+    transition: 0.2s;
+  }
+
+  .payment-method-option.active {
+    border-color: black;
+    font-weight: 600;
+  }
+
+  .card-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 5px;
+  }
+
+  .card-fields.hidden {
+    display: none;
+  }
+
+  .field-error {
+    color: #c0392b;
+    font-size: 12px;
+    margin-top: -8px;
+  }
+
+  .cod-note {
+    color: #666;
+    font-size: 13px;
+    margin-top: 5px;
+  }
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+<div class="logo"><a href="k.html">FURNI</a></div>
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+</nav>
+</header>
+
+<section class="checkout-page" id="checkoutSection">
+  <h1>Checkout</h1>
+
+  <div class="checkout-section" id="orderSummary">
+    <h2>Order Summary</h2>
+    <div id="summaryLines">Loading…</div>
+    <div class="summary-total" id="summaryTotal"></div>
+  </div>
+
+  <form id="checkoutForm">
+
+    <div class="checkout-section">
+      <h2>Contact</h2>
+      <input type="text" id="name" placeholder="Full name" required>
+      <input type="email" id="email" placeholder="Email" required>
+    </div>
+
+    <div class="checkout-section">
+      <h2>Shipping Address</h2>
+      <input type="text" id="address" placeholder="Street address" required>
+      <div class="field-row">
+        <input type="text" id="city" placeholder="City" required>
+        <input type="text" id="postalCode" placeholder="Postal code" required>
+      </div>
+      <input type="text" id="country" placeholder="Country" required>
+    </div>
+
+    <div class="checkout-section">
+      <h2>Payment</h2>
+
+      <div class="payment-methods">
+        <div class="payment-method-option active" id="methodCardBtn" data-method="card">
+          💳 Card
+        </div>
+        <div class="payment-method-option" id="methodCodBtn" data-method="cod">
+          💵 Cash on Delivery
+        </div>
+      </div>
+
+      <div class="card-fields" id="cardFields">
+        <input type="text" id="nameOnCard" placeholder="Name on card" autocomplete="cc-name">
+        <input type="text" id="cardNumber" placeholder="Card number" inputmode="numeric" autocomplete="cc-number" maxlength="23">
+        <div class="field-row">
+          <input type="text" id="cardExpiry" placeholder="MM/YY" inputmode="numeric" autocomplete="cc-exp" maxlength="5">
+          <input type="text" id="cardCvv" placeholder="CVV" inputmode="numeric" autocomplete="cc-csc" maxlength="4">
+        </div>
+        <div class="field-error" id="cardError" style="display:none;"></div>
+      </div>
+
+      <p class="cod-note" id="codNote" style="display:none;">
+        Pay in cash when your order arrives.
+      </p>
+    </div>
+
+    <button type="submit" class="btn-primary" id="submitBtn">Place Order</button>
+  </form>
+
+  <div class="checkout-error" id="checkoutError"></div>
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+const form = document.getElementById("checkoutForm");
+const errorBox = document.getElementById("checkoutError");
+const submitBtn = document.getElementById("submitBtn");
+
+if (getCart().length === 0) {
+  window.location.href = "cart.html";
+}
+
+/* ---------------- Order summary ---------------- */
+
+function renderSummary() {
+  const linesEl = document.getElementById("summaryLines");
+  const totalEl = document.getElementById("summaryTotal");
+
+  fetch("/api/products")
+    .then(res => res.json())
+    .then(products => {
+      let total = 0;
+
+      const html = getCart().map(line => {
+        const product = products.find(p => Number(p.id) === Number(line.productId));
+        if (!product) return "";
+
+        const qty = Math.min(Math.max(1, Number(line.qty)), Number(product.stock) || 1);
+        const subtotal = product.price * qty;
+        total += subtotal;
+
+        return `
+          <div class="summary-line">
+            <img src="${product.img}" alt="${product.name}">
+            <div class="summary-name">${product.name} × ${qty}</div>
+            <div>$${subtotal.toFixed(2)}</div>
+          </div>
+        `;
+      }).join("");
+
+      linesEl.innerHTML = html || "<p>Your cart is empty.</p>";
+      totalEl.innerHTML = `<span>Total</span><span>$${total.toFixed(2)}</span>`;
+    })
+    .catch(() => {
+      linesEl.innerHTML = '<p class="load-error">Could not load your order summary.</p>';
+    });
+}
+
+renderSummary();
+
+/* ---------------- Payment method toggle ---------------- */
+
+const methodCardBtn = document.getElementById("methodCardBtn");
+const methodCodBtn = document.getElementById("methodCodBtn");
+const cardFields = document.getElementById("cardFields");
+const codNote = document.getElementById("codNote");
+
+let paymentMethod = "card";
+
+function setPaymentMethod(method) {
+  paymentMethod = method;
+  methodCardBtn.classList.toggle("active", method === "card");
+  methodCodBtn.classList.toggle("active", method === "cod");
+  cardFields.classList.toggle("hidden", method !== "card");
+  codNote.style.display = method === "cod" ? "block" : "none";
+}
+
+methodCardBtn.addEventListener("click", () => setPaymentMethod("card"));
+methodCodBtn.addEventListener("click", () => setPaymentMethod("cod"));
+
+/* ---------------- Card field formatting ---------------- */
+
+const cardNumberInput = document.getElementById("cardNumber");
+const cardExpiryInput = document.getElementById("cardExpiry");
+const cardCvvInput = document.getElementById("cardCvv");
+
+// Groups digits into 4s as the user types: "4242 4242 4242 4242"
+cardNumberInput.addEventListener("input", () => {
+  const digits = cardNumberInput.value.replace(/\D/g, "").slice(0, 19);
+  cardNumberInput.value = digits.replace(/(.{4})/g, "$1 ").trim();
+});
+
+// Auto-inserts the slash: "12" -> "12/" as the user keeps typing
+cardExpiryInput.addEventListener("input", () => {
+  let digits = cardExpiryInput.value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length >= 3) {
+    digits = digits.slice(0, 2) + "/" + digits.slice(2);
+  }
+  cardExpiryInput.value = digits;
+});
+
+cardCvvInput.addEventListener("input", () => {
+  cardCvvInput.value = cardCvvInput.value.replace(/\D/g, "").slice(0, 4);
+});
+
+/* ---------------- Client-side card validation ---------------- */
+// Mirrors the server's checks so the person gets instant feedback —
+// but the server re-validates everything itself; this is convenience,
+// not the source of truth. No payment processor is involved anywhere.
+
+function luhnValid(digits) {
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = Number(digits[i]);
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+function validateCardFields() {
+  const nameOnCard = document.getElementById("nameOnCard").value.trim();
+  const cardNumber = cardNumberInput.value.replace(/\s+/g, "");
+  const expiry = cardExpiryInput.value.trim();
+  const cvv = cardCvvInput.value.trim();
+
+  if (!nameOnCard) return "Enter the name on the card.";
+  if (!/^\d{13,19}$/.test(cardNumber) || !luhnValid(cardNumber)) {
+    return "Enter a valid card number.";
+  }
+
+  const expMatch = expiry.match(/^(\d{2})\/(\d{2})$/);
+  if (!expMatch) return "Expiry must be in MM/YY format.";
+  const expMonth = Number(expMatch[1]);
+  const expYear = 2000 + Number(expMatch[2]);
+  if (expMonth < 1 || expMonth > 12) return "Expiry month is invalid.";
+  const expiresAt = new Date(expYear, expMonth, 1);
+  if (expiresAt <= new Date()) return "This card has expired.";
+
+  if (!/^\d{3,4}$/.test(cvv)) return "Enter a valid CVV.";
+
+  return null; // valid
+}
+
+/* ---------------- Submit ---------------- */
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.style.display = "none";
+  document.getElementById("cardError").style.display = "none";
+
+  let payment;
+
+  if (paymentMethod === "card") {
+    const cardError = validateCardFields();
+    if (cardError) {
+      const errEl = document.getElementById("cardError");
+      errEl.textContent = cardError;
+      errEl.style.display = "block";
+      return;
+    }
+    payment = {
+      method: "card",
+      nameOnCard: document.getElementById("nameOnCard").value.trim(),
+      cardNumber: cardNumberInput.value.replace(/\s+/g, ""),
+      expiry: cardExpiryInput.value.trim(),
+      cvv: cardCvvInput.value.trim(),
+    };
+  } else {
+    payment = { method: "cod" };
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Placing order…";
+
+  const payload = {
+    items: getCart().map(line => ({ productId: line.productId, qty: line.qty })),
+    customer: {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+    },
+    shipping: {
+      address: document.getElementById("address").value,
+      city: document.getElementById("city").value,
+      postalCode: document.getElementById("postalCode").value,
+      country: document.getElementById("country").value,
+    },
+    payment,
+  };
+
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // 409 here means someone else bought the stock out from under this
+      // cart between browsing and checkout — the exact race the atomic
+      // UPDATE in the backend is there to catch.
+      errorBox.textContent = data.error || 'Something went wrong.';
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Place Order";
+      return;
+    }
+
+    clearCart();
+    document.getElementById("checkoutSection").innerHTML = `
+      <div class="checkout-success">
+        <h1>Order Confirmed 🎉</h1>
+        <p style="margin-top:15px;">Order #${data.id} — total $${(data.totalCents / 100).toFixed(2)}</p>
+        <p style="margin-top:8px; color:#666;">
+          ${paymentMethod === 'card' ? 'Paid by card' : 'Cash on delivery'}
+        </p>
+        <a href="shop.html" class="btn-primary" style="margin-top:30px; display:inline-block;">Continue Shopping</a>
+      </div>
+    `;
+  } catch (err) {
+    errorBox.textContent = "Could not reach the server. Please try again.";
+    errorBox.style.display = "block";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Place Order";
+  }
+});
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

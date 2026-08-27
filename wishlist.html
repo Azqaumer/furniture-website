@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Wishlist - FURNI</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="l.css">
+</head>
+
+<body>
+
+<header class="navbar">
+<div class="logo"><a href="k.html">FURNI</a></div>
+<nav>
+<a href="k.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="collection.html">Collections</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+</nav>
+</header>
+
+<section class="wishlist-page">
+<h1>Your Wishlist</h1>
+<div class="product-grid" id="wishlistGrid" style="margin-top:30px;"></div>
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+ <script src="js/cart-drawer.js"></script>
+<script>
+function openProduct(id){ window.location.href = "product.html?id=" + id; }
+
+function starRating(p) {
+  if (!p.ratingCount) return '';
+  const rounded = Math.round(p.ratingAvg);
+  const stars = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+  return `<div class="star-rating">${stars}<span class="rating-count">(${p.ratingCount})</span></div>`;
+}
+
+function render() {
+  const ids = getWishlist();
+  const grid = document.getElementById("wishlistGrid");
+
+  if (ids.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-cart" style="width:100%;">
+        <h2>Your wishlist is empty</h2>
+        <p>Tap the heart on any product to save it here.</p>
+        <br>
+        <a href="shop.html" class="btn-primary">Browse Products →</a>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = "<p>Loading…</p>";
+
+  fetch('/api/products')
+    .then(res => res.json())
+    .then(products => {
+      const items = products.filter(p => ids.includes(Number(p.id)));
+
+      if (items.length === 0) {
+        grid.innerHTML = '<p class="filter-empty">These items are no longer available.</p>';
+        return;
+      }
+
+      grid.innerHTML = items.map(p => `
+        <div class="product-card">
+          <button class="wishlist-heart active"
+            onclick="removeFromWishlist(${p.id}); render();">♥</button>
+          <img src="${p.img}" onclick="openProduct(${p.id})">
+          <h3>${p.name}</h3>
+          ${starRating(p)}
+          <p>$${p.price.toFixed(2)}</p>
+          <button class="cart-btn" ${p.stock === 0 ? 'disabled' : ''}
+            onclick="addToCart(${p.id}); this.textContent='Added ✓'">
+            ${p.stock === 0 ? 'Sold out' : 'Add to Cart'}
+          </button>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      grid.innerHTML = '<p class="load-error">Could not load your wishlist. Is the FURNI server running?</p>';
+    });
+}
+
+render();
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-col">
+      <h4>FURNI</h4>
+      <p style="color:#aaa; max-width:260px;">Crafting timeless furniture pieces designed for modern living sanctuaries.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="k.html">Home</a></li>
+        <li><a href="shop.html">Shop All</a></li>
+        <li><a href="collection.html">Collections</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="refunds.html">Shipping & Refunds</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 FURNI. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>

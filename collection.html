@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Collections - FURNI</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="l.css">
+
+  <style>
+    .collection-hero {
+      height: 70vh;
+      margin-top: -80px;
+      background:
+      linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+      url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .collection-hero h1 {
+      color: white;
+      font-size: 60px;
+      letter-spacing: 2px;
+      text-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    }
+
+    .collections {
+      padding: 100px 60px;
+      text-align: center;
+    }
+
+    .collection-grid {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin-top: 60px;
+      flex-wrap: wrap;
+    }
+
+    .collection-card {
+      width: 280px;
+      height: 360px;
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: 0.4s;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .collection-card:nth-child(1) { transform: rotate(-2deg); }
+    .collection-card:nth-child(2) { transform: rotate(2deg); }
+    .collection-card:nth-child(3) { transform: rotate(-1deg); }
+
+    .collection-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: 0.5s;
+    }
+
+    .collection-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+    }
+
+    .collection-card h3 {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+      font-size: 22px;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+
+    .collection-card:hover {
+      transform: rotate(0deg) translateY(-10px) scale(1.05);
+    }
+
+    .collection-card:hover img {
+      transform: scale(1.1);
+    }
+
+    .products {
+      display: none;
+      padding: 80px;
+      text-align: center;
+    }
+
+    .product-grid {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .product-card button {
+      margin-top: 10px;
+      padding: 8px 15px;
+      border: none;
+      background: black;
+      color: white;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      margin-top: 30px;
+      cursor: pointer;
+      display: inline-block;
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border-radius: 20px;
+    }
+  </style>
+
+</head>
+<div id="quickViewModal" onclick="if(event.target===this) closeQuickView()">
+  <div class="qv-box">
+    <button class="qv-close" onclick="closeQuickView()">×</button>
+    <img id="qvImg" src="">
+    <div>
+      <h2 id="qvName"></h2>
+      <p id="qvPrice" style="font-size:20px; margin:10px 0;"></p>
+      <p id="qvDesc" style="color:#666; margin-bottom:20px;"></p>
+      <p id="qvStock" style="color:#999; font-size:13px;"></p>
+      <br>
+      <button class="btn-primary" id="qvAddBtn">Add to Cart</button>
+      <a id="qvLink" href="#" style="margin-left:10px; font-size:13px; color:#666;">View Full Page →</a>
+    </div>
+  </div>
+</div>
+<body>
+
+<header class="navbar">
+  <div class="logo">
+    <a href="k.html">FURNI</a>
+  </div>
+
+  <nav>
+    <a href="k.html">Home</a>
+    <a href="shop.html">Shop</a>
+    <a href="collection.html">Collections</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<section class="collection-hero">
+  <h1>OUR COLLECTIONS</h1>
+</section>
+
+<section class="collections" id="collectionList">
+  <div class="collection-grid">
+    <div class="collection-card" onclick="openCollection('scandinavian')">
+      <img src="https://images.unsplash.com/photo-1618220179428-22790b461013">
+      <h3>Scandinavian Minimal</h3>
+    </div>
+
+    <div class="collection-card" onclick="openCollection('vintage')">
+      <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c">
+      <h3>Vintage Japandi</h3>
+    </div>
+
+    <div class="collection-card" onclick="openCollection('industrial')">
+      <img src="https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a">
+      <h3>Industrial Minimal</h3>
+    </div>
+  </div>
+</section>
+
+<section class="products" id="productsSection">
+  <h2 id="collectionTitle"></h2>
+  <div class="product-grid" id="productGrid"></div>
+  <div class="back-btn" onclick="goBack()">← Back</div>
+</section>
+
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/nav-search.js"></script>
+<script src="js/cart-drawer.js"></script>
+<script>
+function starRating(p) {
+  if (!p.ratingCount) return '';
+  const rounded = Math.round(p.ratingAvg);
+  const stars = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+  return `<div class="star-rating">${stars}<span class="rating-count">(${p.ratingCount})</span></div>`;
+}
+
+function loadCollections() {
+  const grid = document.querySelector(".collection-grid");
+  fetch('/api/collections')
+    .then(res => res.json())
+    .then(collections => {
+      grid.innerHTML = collections.map(c => `
+        <div class="collection-card" onclick="openCollection('${c.slug}')">
+          <img src="${c.heroImg || 'https://images.unsplash.com/photo-1618220179428-22790b461013'}">
+          <h3>${c.name}</h3>
+        </div>
+      `).join('');
+    })
+    .catch(() => { grid.innerHTML = '<p>Failed to load collections.</p>'; });
+}
+
+function openCollection(slug) {
+  const list = document.getElementById("collectionList");
+  const products = document.getElementById("productsSection");
+  const grid = document.getElementById("productGrid");
+  const title = document.getElementById("collectionTitle");
+  list.style.display = "none";
+  products.style.display = "block";
+  title.innerText = slug.toUpperCase() + " COLLECTION";
+  grid.innerHTML = "Loading…";
+  fetch(`/api/collections/${slug}`)
+    .then(res => res.json())
+    .then(items => {
+      grid.innerHTML = items.length ? items.map(item => `
+        <div class="product-card">
+          <button class="wishlist-heart ${isWishlisted(item.id) ? 'active' : ''}"
+            aria-pressed="${isWishlisted(item.id)}"
+            onclick="event.stopPropagation(); toggleWishlistButton(this, ${item.id})">${isWishlisted(item.id) ? '♥' : '♡'}</button>
+          <div onclick="openProduct(${item.id})">
+            <img src="${item.img}">
+            <h3>${item.name}</h3>
+            ${starRating(item)}
+            <p>$${item.price.toFixed(2)}</p>
+          </div>
+        </div>
+      `).join('') : '<p>No products in this collection yet.</p>';
+    })
+    .catch(() => { grid.innerHTML = '<p>Failed to load collection.</p>'; });
+}
+
+function openProduct(id){ window.location.href = "product.html?id=" + id; }
+
+function goBack() {
+  document.getElementById("collectionList").style.display = "block";
+  document.getElementById("productsSection").style.display = "none";
+}
+
+loadCollections();
+</script>
+<div id="cartDrawer" onclick="if(event.target===this) closeCartDrawer()">
+  <div class="cart-drawer-bg" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer-panel">
+    <div class="cart-drawer-head">
+      <h3>Your Cart</h3>
+      <button class="qv-close" onclick="closeCartDrawer()">×</button>
+    </div>
+    <div id="cartDrawerItems" class="cart-drawer-items">Loading...</div>
+    <div class="cart-drawer-foot">
+      <p id="cartDrawerTotal" style="font-weight:600; margin-bottom:15px;"></p>
+      <a href="cart.html" class="btn-primary" style="width:100%; text-align:center;">Go to Cart</a>
+      <a href="checkout.html" class="btn-dark" style="width:100%; text-align:center; margin-top:10px; display:inline-block; padding:12px 22px; border-radius:25px; text-decoration:none;">Checkout →</a>
+    </div>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-col">
+      <h4>FURNI</h4>
+      <p style="color:#aaa; max-width:260px;">Crafting timeless furniture pieces designed for modern living sanctuaries.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="k.html">Home</a></li>
+        <li><a href="shop.html">Shop All</a></li>
+        <li><a href="collection.html">Collections</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="refunds.html">Shipping & Refunds</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 FURNI. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>
