@@ -847,50 +847,74 @@ font-size: 13px;
 
 @media (max-width: 900px) {
   body {
-    padding-top: 70px;
+    padding-top: 75px;
   }
 
   .navbar {
-    padding: 12px 15px;
-    flex-direction: column;
-    gap: 8px;
+    padding: 10px 15px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     background: rgba(28, 27, 24, 0.95);
   }
 
   .navbar .logo a {
-    font-size: 20px;
+    font-size: 18px;
     letter-spacing: 1px;
   }
 
   .navbar nav {
     gap: 10px;
-    justify-content: center;
-    width: 100%;
-    font-size: 13px;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .navbar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navbar a {
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   #nav-search-form {
-    width: 100%;
-    justify-content: center;
-    margin: 4px 0;
+    display: none;
   }
 
-  #nav-search-input,
-  #nav-search-input:focus {
-    width: 85%;
-    max-width: 250px;
+  .hero {
+    height: 50vh;
+    margin-top: -75px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+    line-height: 1.2;
   }
 
   .featured {
     flex-direction: column;
-    margin: 20px;
-    padding: 30px 20px;
+    margin: 15px;
+    padding: 20px 15px;
+    gap: 20px;
   }
 
   .featured-left {
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
+    gap: 15px;
+  }
+
+  .featured-left .product-card {
+    width: 47% !important;
+    max-width: 180px;
+  }
+
+  .featured-left .product-card img {
+    height: 150px;
   }
 
   .featured-right {
@@ -898,76 +922,84 @@ font-size: 13px;
     text-align: center;
   }
 
+  .shop-section {
+    padding: 40px 15px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 5px;
+  }
+
+  .filter-bar input[type="text"],
+  .filter-bar select {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+    padding: 0 5px;
+  }
+
+  .product-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto;
+    padding: 10px;
+  }
+
+  .product-card img {
+    height: 170px;
+  }
+
   .about-gallery {
     flex-direction: column;
-    padding: 20px;
+    padding: 15px;
   }
 
   .about-gallery img {
     width: 100%;
-    height: 250px;
+    height: 220px;
   }
 
   .contact-section {
     flex-direction: column;
-    padding: 40px 20px;
+    padding: 40px 15px;
   }
 
   .contact-form {
     width: 100%;
   }
 
-  .hero h1, .about-hero h1, .collection-hero h1, .explore-hero h1 {
-    font-size: 36px;
-    line-height: 1.2;
+  .about-hero, .contact-hero {
+    height: 45vh;
+    margin-top: -75px;
   }
 
-  .hero, .about-hero, .collection-hero, .explore-hero, .contact-hero {
-    height: 50vh;
-    background-attachment: scroll;
-  }
-
-  .about-values {
-    flex-direction: column;
-    align-items: center;
-    gap: 30px;
-    padding: 40px 20px;
+  .about-hero h1, .contact-hero h1 {
+    font-size: 32px;
   }
 
   .back-btn {
-    left: 15px;
-    top: 85px;
-    font-size: 18px;
+    left: 12px;
+    top: 90px;
+    font-size: 16px;
     padding: 8px 12px;
-  }
-
-  .filter-bar input[type="text"] {
-    min-width: 100%;
-  }
-
-  .shop-section, .wishlist-page, .cart-page {
-    padding: 80px 20px;
-  }
-
-  .product-grid {
-    gap: 15px;
-    margin-top: 20px;
-  }
-
-  .product-card {
-    width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
   }
 
   .qv-box {
     flex-direction: column;
-    padding: 20px;
+    padding: 15px;
     gap: 15px;
   }
 
   .qv-box img {
     width: 100%;
-    height: 250px;
+    height: 220px;
   }
 }
